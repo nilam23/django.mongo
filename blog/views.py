@@ -7,6 +7,8 @@ from utils import helpers, decorators
 from .models import Blog
 from user import services as user_services
 from datetime import datetime
+from blog import services as blog_services
+from blog import queries
 
 @decorators.verify_auth
 @csrf_exempt
@@ -32,5 +34,17 @@ def create_blog(request):
     )
 
     return JsonResponse({ 'data': { 'title': title, 'content': content, 'author': current_user['username'] } }, status=status.HTTP_201_CREATED)
+  except Exception as error:
+    return helpers.handle_view_exception(error, 'Exception in create_blog view')
+
+@api_view(['GET'])
+def get_all_blogs(request):
+  try:
+    db_instance = request.db
+    aggregation_query = queries.aggregation_query_for_blogs()
+    
+    blogs = blog_services.find_all_blogs(db_instance, aggregation_query)
+
+    return JsonResponse({ 'data': blogs }, status=status.HTTP_200_OK)
   except Exception as error:
     return helpers.handle_view_exception(error, 'Exception in create_blog view')
