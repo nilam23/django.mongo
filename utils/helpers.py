@@ -15,16 +15,6 @@ def generate_jwt_token(payload):
 
   return token
 
-def verify_jwt_token(token):
-  try:
-    decoded_token = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=['HS256'])
-
-    return decoded_token
-  except jwt.ExpiredSignatureError:
-    return JsonResponse({}, status=status.HTTP_400_BAD_REQUEST)
-  except jwt.InvalidTokenError:
-    return JsonResponse({}, status=status.HTTP_400_BAD_REQUEST)
-
 def handle_view_exception(exception, message, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR):
   error_data = {
     'type': type(exception).__name__,
