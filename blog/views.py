@@ -63,3 +63,65 @@ def get_specific_blog(request, blog_id):
     return JsonResponse({ 'data': blogs[0] }, status=status.HTTP_200_OK)
   except Exception as error:
     return helpers.handle_view_exception(error, 'Exception in get_specific_blog view')
+  
+@decorators.verify_auth
+@csrf_exempt
+@api_view(['PATCH'])
+def update_specific_blog(request, blog_id):
+  try:
+    if not len(request.data.keys()):
+      return JsonResponse({ 'error_message': 'Data to be updated missing' }, status=status.HTTP_400_BAD_REQUEST)
+
+    current_user = request.current_user
+    db_instance = request.db
+    filter_query = { '_id': ObjectId(blog_id), 'author_id': ObjectId(current_user['_id']) }
+    update_query = {
+      '$set': {
+        'updated_at': datetime.now(),
+      }
+    }
+    for data_field in list(request.data.keys()):
+      update_query['$set'][data_field] = request.data[data_field]
+
+    updated_count = blog_services.update_specific_blog(db_instance, filter_query, update_query)
+
+    if not updated_count:
+      return JsonResponse({ 'error_message': f'Blog with id {blog_id} not found' }, status=status.HTTP_404_NOT_FOUND)
+    
+    aggregation_query = queries.aggregation_query_for_blogs({ '_id': ObjectId(blog_id) })
+
+    blogs = blog_services.find_all_blogs(db_instance, aggregation_query)
+    updated_blog = blogs[0]
+
+    return JsonResponse({ 'data': updated_blog }, status=status.HTTP_200_OK)
+  except Exception as error:
+    return helpers.handle_view_exception(error, 'Exception in update_specific_blog view')
+  
+@decorators.verify_auth
+@csrf_exempt
+@api_view(['DELETE'])
+def delete_specific_blog(request, blog_id):
+  try:
+    current_user = request.current_user
+    db_instance = request.db
+    blog_filter_query = { '_id': ObjectId(blog_id), 'author_id': ObjectId(current_user['_id']) }
+    deleted_count = blog_services.delete_specific_blog(db_instance, blog_filter_query)
+
+    if not deleted_count:
+      return JsonResponse({ 'error_message': f'Blog with id {blog_id} not found' }, status=status.HTTP_404_NOT_FOUND)
+    
+    user_filter_query = { '_id': ObjectId(current_user['_id']) }
+    user_update_query = {
+      '$pull': {
+        'blog_ids': ObjectId(blog_id),
+      },
+      '$set': {
+        'updated_at': datetime.now(),
+      }
+    }
+
+    user_services.update_specific_user(db_instance, user_filter_query, user_update_query)
+
+    return JsonResponse({ 'message': 'Success' }, status=status.HTTP_200_OK)
+  except Exception as error:
+    return helpers.handle_view_exception(error, 'Exception in delete_specific_blog view')
