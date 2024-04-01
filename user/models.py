@@ -1,13 +1,20 @@
-from djangoPymongo import db_config
 from datetime import datetime
+from utils.app_exception import ApplicationException
 
 class User:
   def __init__(self, username, password):
-    self.username = username
+    self.username = username.strip()
     self.password = password
     self.blog_ids = []
     self.created_at = datetime.now()
     self.updated_at = datetime.now()
+
+  def validate(self):
+    if len(self.username) < 3:
+      raise ApplicationException('username should have at least 3 characters')
+    
+    if len(self.blog_ids):
+      raise ApplicationException('blog_ids should be an empty array')
 
   def save(self, db_instance):
     users_collection = db_instance['users']

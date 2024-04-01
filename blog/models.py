@@ -1,10 +1,9 @@
-from djangoPymongo import db_config
 from datetime import datetime
 
 class Blog:
   def __init__(self, title, content, author_id):
-    self.title = title
-    self.content = content
+    self.title = title.strip()
+    self.content = content.strip()
     self.author_id = author_id
     self.created_at = datetime.now()
     self.updated_at = datetime.now()

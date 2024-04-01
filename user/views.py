@@ -22,6 +22,11 @@ def register(request):
       return JsonResponse({ 'error_message': f'User already exists with the username {username}' }, status=status.HTTP_409_CONFLICT)
 
     new_user = User(username=username, password=hashedPassword)
+    validation_error = new_user.validate()
+
+    if validation_error and 'error_message' in validation_error:
+      return JsonResponse(validation_error, status=status.HTTP_400_BAD_REQUEST)
+
     user_id = new_user.save(db_instance)
 
     jwt_payload = {
